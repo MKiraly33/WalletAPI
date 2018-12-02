@@ -1,0 +1,49 @@
+curl -i -X POST
+  http://localhost:8001/upstreams
+  -H "Content-Type: application/x-www-form-urlencoded"
+  -d "name=wallet-api&healthchecks.active.http_path=/&healthchecks.active.timeout=5&healthchecks.active.concurrency=10&healthchecks.active.healthy.interval=30&healthchecks.active.unhealthy.interval=30&healthchecks.active.healthy.successes=10&healthchecks.active.unhealthy.tcp_failures=5&healthchecks.active.unhealthy.timeouts=10&healthchecks.active.unhealthy.http_failures=5'"
+ 
+curl -i -X POST http://localhost:8001/upstreams/wallet-api/targets
+  -H "Content-Type: application/x-www-form-urlencoded"
+  -d "target=wallet_1-api:10010"
+  -d "weight=100"
+ 
+curl -i -X POST http://localhost:8001/upstreams/wallet-api/targets
+  -H "Content-Type: application/x-www-form-urlencoded"
+  -d "target=wallet_2-api:10010"
+  -d "weight=50"
+ 
+curl -i -X POST http://localhost:8001/services/
+  -H "Content-Type: application/x-www-form-urlencoded"
+  -d "name=wallet-api"
+  -d "url=http://wallet-api/"
+ 
+curl -X POST http://localhost:8001/services/wallet-api/routes
+  -H "Content-Type: application/x-www-form-urlencoded"
+  -d "hosts[]=localhost"
+
+{service}: curl http://localhost:8001/services
+
+curl -X POST http://localhost:8001/services/{service}/plugins
+  -d "name=key-auth"
+
+curl -i -X POST http://localhost:8001/consumers 
+  -d "username=Mate"
+
+{consumer}: curl http://localhost:8001/consumers
+
+curl -i -X POST http://localhost:8001/consumers/{consumer}/key-auth 
+  -d "key=supersecret"
+
+http://localhost:8001/services/{service}/plugins
+  -d "name=rate-limiting"
+  -d "config.second=5"
+  -d "config.minute=120"
+
+http://localhost:8001/plugins
+  -d "name=rate-limiting"
+  -d "config.second=3"
+  -d "config.hour=100"
+  -d "consumer_id={consumer}"
+
+

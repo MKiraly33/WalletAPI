@@ -1,0 +1,336 @@
+swagger: "2.0"
+info:
+  version: "0.0.1"
+  title: Wallet API created by Kiraly Mate
+# during dev, should point to your local machine
+host: localhost:10010
+# basePath prefixes all resource paths 
+basePath: /
+# 
+schemes:
+  # tip: remove http to make production-grade
+  - http
+  - https
+# format of bodies a client can send (Content-Type)
+consumes:
+  - application/json
+# format of the responses to the client (Accepts)
+produces:
+  - application/json
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: session_id
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: "Register"
+    description: Register a new user
+  - name: "Authentication"
+    description: Authentication operations
+  - name: "Data"
+    description: Operations which answer with information
+  - name: "Invoice"
+    description: Invoice and transaction operations
+paths:
+  /register:
+    x-swagger-router-controller: register
+    post:
+      description: Signs up a new user and saves the credentials + the account number
+      operationId: signUpUser
+      security: []
+      tags:
+      - "Register"
+      parameters:
+        - name: user
+          in: body
+          description: The new user
+          required: true
+          schema:
+            $ref: '#/definitions/NewUser'
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/NewUserResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /authentication/login:
+    x-swagger-router-controller: authentication
+    post:
+      description: Authenticates a user
+      operationId: login
+      security: []
+      tags:
+      - "Authentication"
+      parameters:
+        - name: credentials
+          in: body
+          description: User credentials
+          required: true
+          schema:
+            $ref: "#/definitions/Credentials"
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/AuthResponse"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /authentication/logout:
+    x-swagger-router-controller: authentication
+    get:
+      description: Logout user
+      operationId: logout
+      tags:
+      - "Authentication"
+      parameters:
+        - name: session_id
+          in: header
+          description: Session Id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/AuthResponse"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /data:
+    x-swagger-router-controller: data
+    get:
+      description: Answers with informations about the user
+      operationId: getUserData
+      tags:
+      - "Data"
+      parameters:
+        - name: session_id
+          in: header
+          description: Session Id
+          required: true
+          type: string
+        - name: pin
+          in: header
+          description: Pin
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/UserDataResponse"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /swagger:
+    x-swagger-pipe: swagger_raw
+  /invoice/remove:
+    x-swagger-router-controller: invoice
+    delete:
+      description: Removes the account number from the use
+      operationId: remove
+      tags:
+      - "Invoice"
+      parameters:
+        - name: session_id
+          in: header
+          description: Session Id
+          required: true
+          type: string
+        - name: pin
+          in: header
+          description: Pin
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/RemovedResponse"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /invoice/upload:
+    x-swagger-router-controller: invoice
+    put:
+      description: Uploads money to the account
+      operationId: upload
+      tags:
+      - "Invoice"
+      parameters:
+        - name: session_id
+          in: header
+          description: Session Id
+          required: true
+          type: string
+        - name: pin
+          in: header
+          description: Pin
+          required: true
+          type: integer
+        - name: amount
+          in: query
+          description: The amount to upload
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/BalanceResponse"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /invoice/pay:
+    x-swagger-router-controller: invoice
+    put:
+      description: Decreases the balance by the price
+      operationId: pay
+      tags:
+      - "Invoice"
+      parameters:
+        - name: session_id
+          in: header
+          description: Session Id
+          required: true
+          type: string
+        - name: pin
+          in: header
+          description: Pin
+          required: true
+          type: integer
+        - name: price
+          in: query
+          description: The price
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/BalanceResponse"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+# complex objects have schema definitions
+definitions:
+  ErrorResponse:
+    required:
+      - message
+    properties:
+      message:
+        type: string
+  NewUser:
+    required:
+      - username
+      - pin
+      - accountNumber
+    properties:
+      username:
+        type: string
+        example: 'user'
+      pin:
+        type: integer
+        example: 1234
+      accountNumber:
+        type: string
+        example: '11111111-22222222-33333333'
+  NewUserResponse:
+    required:
+      - sessionId
+    properties:
+      sessionId:
+        type: string
+        example: 'abc12345'
+  Credentials:
+    required:
+      - username
+      - pin
+    properties:
+      username:
+        type: string
+        example: 'user'
+      pin:
+        type: integer
+        example: 1234
+  AuthResponse:
+    required:
+      - sessionId
+    properties:
+      sessionId:
+        type: string
+        example: 'abc12345'
+  UserDataResponse:
+    required:
+      - username
+      - accountNumber
+      - balance
+    properties:
+      username:
+        type: string
+        example: 'user'
+      accountNumber:
+        type: string
+        example: '11111111-22222222-33333333'
+      balance:
+        type: number
+        example: 100000
+  RemovedResponse:
+    required:
+      - username
+      - accountNumber
+      - balance
+    properties:
+      username:
+        type: string
+        example: 'user'
+      accountNumber:
+        type: string
+        example: 'Unknown'
+      balance:
+        type: integer
+        example: 0
+  BalanceResponse:
+    required:
+      - balance
+    properties:
+      balance:
+        type: number
+        example: 110000
+      
